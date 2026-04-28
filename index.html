@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Firefly | Notes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./src/styles.css">
+  </head>
+  <body>
+    <div id="cursor" aria-hidden="true"></div>
+    <nav class="sidenav" aria-label="Section navigation">
+      <a class="side-logo" href="#top" aria-label="Firefly notes home">F</a>
+      <div class="side-links">
+        <a href="#clarity">Clarity</a>
+        <a href="#confidence">Truth</a>
+        <a href="#requirements">Coverage</a>
+        <a href="./app.html">App</a>
+      </div>
+      <span>NOTES</span>
+    </nav>
+
+    <main class="main docs-page" id="top">
+      <section class="hero section-band fade-in" aria-labelledby="app-title">
+        <div class="hero-grid-bg" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <div class="eyebrow-line">
+            <i></i>
+            <span><span class="inline-wordmark"><span>Fire</span><span>fly</span></span> brief</span>
+          </div>
+          <h1 id="app-title">Fire<span class="outline">fly</span></h1>
+          <p class="lede">
+            A model-driven system path analyzer. The notes live here; the actual diagnostic workbench lives on the app page.
+          </p>
+          <a class="action-button hero-action" href="./app.html">Open the app</a>
+        </div>
+      </section>
+
+      <section class="ticker dark-band" aria-hidden="true">
+        <div>
+          <span>Measured</span><b>/</b><span>Derived</span><b>/</b><span>Assumed</span><b>/</b><span>Blocked</span><b>/</b>
+          <span>Measured</span><b>/</b><span>Derived</span><b>/</b><span>Assumed</span><b>/</b><span>Blocked</span><b>/</b>
+        </div>
+      </section>
+
+      <section class="clarity-section section-band fade-in" id="clarity">
+        <div class="reference-intro">
+          <div class="section-label">
+            <span class="section-num">01</span>
+            <h2 class="section-title">Product clarity</h2>
+          </div>
+          <p><span class="inline-wordmark"><span>Fire</span><span>fly</span></span> should never feel like a magic benchmark. It is a transfer diagnostician, a hardware fact collector, and a safe benchmark runner.</p>
+        </div>
+        <div class="mode-list">
+          <article class="mode-card">
+            <strong>Transfer diagnosis</strong>
+            <p>Explain why a process took longer than its modeled path suggests.</p>
+            <small><b>Output:</b> expected t, observed t', delta, bottleneck stack, and next checks.</small>
+          </article>
+          <article class="mode-card">
+            <strong>Hardware ground truth</strong>
+            <p>Collect host facts before asking the user to fill in assumptions.</p>
+            <small><b>Output:</b> measured OS facts, redacted identifiers, unavailable counters, confidence level.</small>
+          </article>
+          <article class="mode-card">
+            <strong>Benchmark engine</strong>
+            <p>Run bounded tests that isolate memory, burst I/O, and queue pressure.</p>
+            <small><b>Output:</b> elapsed time, service rate, safety note, and model mapping.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="reference-section section-band fade-in" id="confidence">
+        <div class="reference-intro">
+          <div class="section-label">
+            <span class="section-num">02</span>
+            <h2 class="section-title">Truth labels</h2>
+          </div>
+          <p>Every number needs provenance. <span class="inline-wordmark"><span>Fire</span><span>fly</span></span> separates measured facts from derived rates, user assumptions, and privileged data it cannot access.</p>
+        </div>
+        <div class="confidence-list">
+          <article class="confidence-card">
+            <strong>Measured</strong>
+            <p>Read from the host or produced by a benchmark in this session.</p>
+            <small>CPU model, storage protocol, RAM copy throughput.</small>
+          </article>
+          <article class="confidence-card">
+            <strong>Derived</strong>
+            <p>Calculated from measured facts and deterministic protocol rules.</p>
+            <small>PCIe ceilings after encoding overhead.</small>
+          </article>
+          <article class="confidence-card">
+            <strong>Assumed</strong>
+            <p>Entered by the user or defaulted because the OS did not expose it.</p>
+            <small>SLC cache size, competing PCH traffic.</small>
+          </article>
+          <article class="confidence-card">
+            <strong>Blocked</strong>
+            <p>Requires elevated APIs, vendor tooling, or signed native drivers.</p>
+            <small>Some thermals, memory-controller counters, direct bus queues.</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="reference-section section-band fade-in" id="requirements">
+        <div class="reference-intro">
+          <div class="section-label">
+            <span class="section-num">03</span>
+            <h2 class="section-title">Coverage</h2>
+          </div>
+          <p>The public standard is not “we have a number.” The public standard is “we can tell you where the number came from.”</p>
+        </div>
+        <div class="capability-list">
+          <article class="capability met">
+            <div class="stage-top"><strong>Product clarity</strong><span>met</span></div>
+            <p>Modes, confidence levels, and product promises are now visible.</p>
+            <small>Public copy still needs user testing.</small>
+          </article>
+          <article class="capability met">
+            <div class="stage-top"><strong>Hardware polling</strong><span>met</span></div>
+            <p>The local app exposes a host probe backed by OS-specific collectors.</p>
+            <small>Some counters remain permission-limited.</small>
+          </article>
+          <article class="capability met">
+            <div class="stage-top"><strong>Benchmark engine</strong><span>met</span></div>
+            <p>Safe bounded RAM, burst I/O, and tiny-file pressure runners exist.</p>
+            <small>DMI remains guided because topology must be real.</small>
+          </article>
+          <article class="capability partial">
+            <div class="stage-top"><strong>Topology mapping</strong><span>partial</span></div>
+            <p>The model supports CPU-direct, PCH, DMI, and active PCIe lanes.</p>
+            <small>Exact board routing depends on OS and motherboard metadata.</small>
+          </article>
+          <article class="capability partial">
+            <div class="stage-top"><strong>Noise isolation</strong><span>partial</span></div>
+            <p>Baseline load and queue assumptions are modeled and surfaced.</p>
+            <small>Per-bus queue length still needs privileged counters.</small>
+          </article>
+          <article class="capability blocked">
+            <div class="stage-top"><strong>Kernel-grade access</strong><span>blocked</span></div>
+            <p>Direct memory-controller and I/O-bus access is outside browser/Node scope.</p>
+            <small>That becomes a signed native driver project.</small>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/docs.js"></script>
+  </body>
+</html>

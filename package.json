@@ -1,0 +1,31 @@
+{
+  "name": "firefly",
+  "version": "0.1.0",
+  "description": "A deterministic transfer-time analyzer for expected vs observed system performance.",
+  "type": "module",
+  "scripts": {
+    "build:icons": "node scripts/make-windows-icon.js",
+    "build:web": "node scripts/build-web-assets.js",
+    "test": "node --test",
+    "probe": "node src/hardwareProbe.js",
+    "start": "node server.js",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "npm run build:icons && tauri build",
+    "desktop:build:windows": "npm run build:icons && tauri build"
+  },
+  "keywords": [
+    "performance",
+    "queueing",
+    "transfer",
+    "diagnostics"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0"
+  }
+}

@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Firefly | App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./src/styles.css">
+  </head>
+  <body>
+    <div id="cursor" aria-hidden="true"></div>
+    <nav class="sidenav" aria-label="Section navigation">
+      <a class="side-logo" href="./index.html" aria-label="Firefly notes">F</a>
+      <div class="side-links">
+        <a href="#designer">Designer</a>
+        <a href="#benchmark">Benchmark</a>
+        <a href="#scenario">Scenario</a>
+        <a href="#comparison">Compare</a>
+        <a href="#diagnosis">Diagnosis</a>
+        <a href="#ground-truth">Probe</a>
+        <a href="./index.html">Notes</a>
+      </div>
+      <span>APP</span>
+    </nav>
+
+    <main class="main" id="top">
+      <section class="hero app-hero section-band fade-in" aria-labelledby="app-title">
+        <div class="hero-grid-bg" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <div class="eyebrow-line">
+            <i></i>
+            <span>Diagnostic workbench</span>
+          </div>
+          <h1 id="app-title">Fire<span class="outline">fly</span></h1>
+          <p class="lede">
+            Run safe probes, then model the path. Benchmarks establish measured service rates before the scenario calculator starts making claims.
+          </p>
+          <a class="action-button hero-action" href="./index.html">Read the notes</a>
+        </div>
+        <div class="status-card" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="summary-verdict">Ready to analyze</span>
+        </div>
+      </section>
+
+      <section class="ticker dark-band" aria-hidden="true">
+        <div>
+          <span>Benchmark first</span><b>/</b><span>Probe facts</span><b>/</b><span>Model scenario</span><b>/</b><span>Explain delta</span><b>/</b>
+          <span>Benchmark first</span><b>/</b><span>Probe facts</span><b>/</b><span>Model scenario</span><b>/</b><span>Explain delta</span><b>/</b>
+        </div>
+      </section>
+
+      <section class="designer-section section-band fade-in" id="designer">
+        <div class="reference-intro">
+          <div class="section-label">
+            <span class="section-num">00</span>
+            <h2 class="section-title">System designer</h2>
+          </div>
+          <p>Sketch a theoretical build, choose each major path component, and see what the system should be capable of before real-world noise enters.</p>
+          <button type="button" class="action-button" id="designer-apply-button">Use design in scenario</button>
+        </div>
+        <div class="designer-workbench">
+          <div id="designer-controls" class="designer-controls"></div>
+          <div id="designer-map" class="designer-map" aria-live="polite"></div>
+          <div id="designer-scores" class="designer-scores" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="validation-section section-band fade-in" id="benchmark">
+        <div class="reference-intro">
+          <div class="section-label">
+            <span class="section-num">01</span>
+            <h2 class="section-title">Benchmark engine</h2>
+          </div>
+          <p>Safe local runners for RAM copy, burst writes, and tiny-file pressure. DMI remains guided because it needs real multi-device topology.</p>
+          <button type="button" class="action-button" id="report-button">Export PDF</button>
+        </div>
+        <div>
+          <div id="benchmark-list" class="benchmark-list"></div>
+          <div class="history-panel">
+            <div class="section-label compact">
+              <span class="section-num">H</span>
+              <h2 class="section-title">Run history</h2>
+            </div>
+            <div id="history-list" class="history-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ground-truth-section section-band fade-in" id="ground-truth">
+        <div class="reference-intro">
+          <div class="section-label">
+            <span class="section-num">02</span>
+            <h2 class="section-title">Hardware probe</h2>
+          </div>
+          <p>Run a local OS probe, redact stable identifiers, and show which facts <span class="inline-wordmark"><span>Fire</span><span>fly</span></span> measured before the model relies on assumptions.</p>
+          <button type="button" class="action-button" id="probe-button">Probe this machine</button>
+        </div>
+        <div id="probe-output" class="probe-output">
+          <p>Probe has not run yet.</p>
+        </div>
+      </section>
+
+      <section class="workspace section-band fade-in" id="scenario">
+        <form id="scenario-form" class="panel input-panel">
+          <div class="section-label">
+            <span class="section-num">03</span>
+            <h2 class="section-title">Scenario</h2>
+            <button type="button" class="icon-button" id="reset-button" aria-label="Reset form" title="Reset form">↺</button>
+          </div>
+
+          <div class="field-grid">
+            <label>
+              Operation
+              <select name="operation">
+                <option value="wired-transfer">Wired file transfer</option>
+                <option value="local-copy">Local copy</option>
+                <option value="gpu-assisted">GPU-assisted pipeline</option>
+                <option value="archive-transfer">Archive/compress/transfer</option>
+              </select>
+            </label>
+            <label>
+              Link preset
+              <select name="preset" id="preset">
+                <option value="ethernet10g">10 GbE</option>
+                <option value="ethernet1g">1 GbE</option>
+                <option value="usb32gen2">USB 3.2 Gen 2</option>
+                <option value="thunderbolt4">Thunderbolt 4</option>
+                <option value="pcie4x4">PCIe 4.0 x4</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+            <label>
+              File size
+              <span class="split-field">
+                <input name="fileSize" type="number" min="0" step="0.01" value="20">
+                <select name="fileSizeUnit" aria-label="File size unit">
+                  <option value="GB">GB</option>
+                  <option value="GiB">GiB</option>
+                </select>
+              </span>
+            </label>
+            <label>
+              Observed time (s)
+              <input name="observedSeconds" type="number" min="0" step="0.001" value="19.8">
+            </label>
+          </div>
+
+          <div class="subsection-title">Path ceilings</div>
+          <div class="field-grid">
+            <label>
+              Port speed (Mb/s)
+              <input name="portMbps" type="number" min="0" step="1" value="10000">
+            </label>
+            <label>
+              Source read (MB/s)
+              <input name="sourceReadMBps" type="number" min="0" step="1" value="3500">
+            </label>
+            <label>
+              Destination write (MB/s)
+              <input name="destinationWriteMBps" type="number" min="0" step="1" value="3000">
+            </label>
+            <label>
+              PCIe / bus (MB/s)
+              <input name="busMBps" type="number" min="0" step="1" value="7000">
+            </label>
+            <label>
+              Topology
+              <select name="topology">
+                <option value="cpu-direct">CPU-direct lanes</option>
+                <option value="pch">PCH / chipset shared</option>
+              </select>
+            </label>
+            <label>
+              PCIe generation
+              <input name="pcieGeneration" type="number" min="1" max="6" step="1" value="4">
+            </label>
+            <label>
+              Active PCIe lanes
+              <input name="pcieActiveLanes" type="number" min="1" step="1" value="4">
+            </label>
+            <label>
+              Maximum PCIe lanes
+              <input name="pcieMaxLanes" type="number" min="1" step="1" value="4">
+            </label>
+            <label class="check-field">
+              <input name="useActivePcieLink" type="checkbox">
+              Use active PCIe link state
+            </label>
+            <label>
+              Memory copy (MB/s)
+              <input name="memoryCopyMBps" type="number" min="0" step="1" value="25000">
+            </label>
+            <label>
+              CPU transform (MB/s)
+              <input name="cpuTransformMBps" type="number" min="0" step="1" value="20000">
+            </label>
+            <label>
+              GPU transform (MB/s)
+              <input name="gpuTransformMBps" type="number" min="0" step="1" value="0">
+            </label>
+          </div>
+
+          <details open>
+            <summary>Model assumptions</summary>
+            <div class="field-grid">
+              <label>
+                Protocol efficiency
+                <input name="protocolEfficiency" type="number" min="0.05" max="1" step="0.01" value="0.94">
+              </label>
+              <label>
+                Latency per chunk (ms)
+                <input name="latencyMs" type="number" min="0" step="0.01" value="0.25">
+              </label>
+              <label>
+                Packet loss (%)
+                <input name="packetLossPct" type="number" min="0" max="100" step="0.01" value="0">
+              </label>
+              <label>
+                Queue depth
+                <input name="queueDepth" type="number" min="1" step="1" value="4">
+              </label>
+              <label>
+                DMI/PCH ceiling (MB/s)
+                <input name="dmiMBps" type="number" min="0" step="1" value="0">
+              </label>
+              <label>
+                PCH competing traffic (MB/s)
+                <input name="pchCompetingTrafficMBps" type="number" min="0" step="1" value="0">
+              </label>
+              <label>
+                SLC cache size (GB)
+                <input name="slcCacheGB" type="number" min="0" step="0.1" value="0">
+              </label>
+              <label>
+                Post-cache write (MB/s)
+                <input name="postCacheWriteMBps" type="number" min="0" step="1" value="0">
+              </label>
+              <label>
+                Concurrent jobs
+                <input name="concurrency" type="number" min="1" step="1" value="1">
+              </label>
+              <label>
+                Compression ratio
+                <input name="compressionRatio" type="number" min="0.01" step="0.01" value="1">
+              </label>
+              <label>
+                OS overhead (%)
+                <input name="osOverheadPct" type="number" min="0" max="80" step="1" value="4">
+              </label>
+              <label>
+                Architecture penalty (%)
+                <input name="architecturePenaltyPct" type="number" min="0" max="80" step="1" value="0">
+              </label>
+              <label>
+                Thermal throttle (%)
+                <input name="thermalThrottlePct" type="number" min="0" max="95" step="1" value="0">
+              </label>
+              <label>
+                Temperature (C)
+                <input name="temperatureC" type="number" min="0" step="1" value="0">
+              </label>
+              <label>
+                TjMax (C)
+                <input name="tjMaxC" type="number" min="0" step="1" value="0">
+              </label>
+              <label>
+                CPU core class
+                <select name="cpuCoreClass">
+                  <option value="unknown">Unknown</option>
+                  <option value="p-core">Performance core</option>
+                  <option value="e-core">Efficiency core</option>
+                  <option value="homogeneous">Homogeneous</option>
+                </select>
+              </label>
+              <label class="check-field">
+                <input name="flexModeRam" type="checkbox">
+                Asymmetric RAM / flex mode
+              </label>
+            </div>
+          </details>
+        </form>
+
+        <section class="results" id="diagnosis">
+          <div class="panel metrics" aria-live="polite">
+            <div>
+              <span class="metric-label">Expected t</span>
+              <strong id="expected-time">-</strong>
+            </div>
+            <div>
+              <span class="metric-label">Observed t'</span>
+              <strong id="observed-time">-</strong>
+            </div>
+            <div>
+              <span class="metric-label">Delta</span>
+              <strong id="delta-time">-</strong>
+            </div>
+            <div>
+              <span class="metric-label">Observed rate</span>
+              <strong id="observed-rate">-</strong>
+            </div>
+          </div>
+
+          <div class="panel diagnosis fade-in">
+            <div class="section-label compact">
+              <span class="section-num">04</span>
+              <h2 class="section-title" id="verdict-title">Diagnosis</h2>
+              <span id="confidence-band" class="pill">±0%</span>
+            </div>
+            <p id="verdict-detail"></p>
+            <div id="warning-list" class="warnings"></div>
+          </div>
+
+          <div class="panel fade-in">
+            <div class="section-label compact">
+              <span class="section-num">05</span>
+              <h2 class="section-title">Constraint stack</h2>
+              <span id="effective-rate" class="pill">-</span>
+            </div>
+            <div id="stage-list" class="stage-list"></div>
+          </div>
+
+          <div class="panel fade-in">
+            <div class="section-label compact">
+              <span class="section-num">06</span>
+              <h2 class="section-title">Next checks</h2>
+            </div>
+            <ol id="recommendations" class="recommendations"></ol>
+          </div>
+
+          <div class="panel fade-in">
+            <div class="section-label compact">
+              <span class="section-num">07</span>
+              <h2 class="section-title">Confidence</h2>
+            </div>
+            <div id="confidence-ledger" class="confidence-ledger"></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="comparison-section section-band fade-in" id="comparison">
+        <div class="reference-intro">
+          <div class="section-label">
+            <span class="section-num">08</span>
+            <h2 class="section-title">Compare states</h2>
+          </div>
+          <p>Capture the current model before and after a driver update, cable swap, BIOS change, or tuning pass. <span class="inline-wordmark"><span>Fire</span><span>fly</span></span> shows whether the change moved the expected path or only changed observed noise.</p>
+          <label class="inline-label">
+            Change label
+            <input id="comparison-label" type="text" value="Driver update">
+          </label>
+          <div class="comparison-actions">
+            <button type="button" class="action-button" id="capture-before-button">Capture before</button>
+            <button type="button" class="action-button" id="capture-after-button">Capture after</button>
+            <button type="button" class="action-button ghost-action" id="swap-comparison-button">Swap</button>
+            <button type="button" class="action-button ghost-action" id="clear-comparison-button">Clear</button>
+          </div>
+        </div>
+        <div class="comparison-workbench">
+          <div id="comparison-summary" class="comparison-summary" aria-live="polite"></div>
+          <div id="comparison-table" class="comparison-table" aria-live="polite"></div>
+          <div id="comparison-snapshots" class="comparison-snapshots" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
