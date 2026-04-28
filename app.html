@@ -12,11 +12,11 @@
     <nav class="sidenav" aria-label="Section navigation">
       <a class="side-logo" href="./index.html" aria-label="Firefly notes">F</a>
       <div class="side-links">
+        <a href="#workflows">Modes</a>
+        <a href="#comparison">Compare</a>
+        <a href="#scenario">Diagnose</a>
         <a href="#designer">Designer</a>
         <a href="#benchmark">Benchmark</a>
-        <a href="#scenario">Scenario</a>
-        <a href="#comparison">Compare</a>
-        <a href="#diagnosis">Diagnosis</a>
         <a href="#ground-truth">Probe</a>
         <a href="./index.html">Notes</a>
       </div>
@@ -33,9 +33,12 @@
           </div>
           <h1 id="app-title">Fire<span class="outline">fly</span></h1>
           <p class="lede">
-            Run safe probes, then model the path. Benchmarks establish measured service rates before the scenario calculator starts making claims.
+            Find the bottleneck, prove whether an upgrade helped, or design the machine before you build it.
           </p>
-          <a class="action-button hero-action" href="./index.html">Read the notes</a>
+          <div class="hero-actions">
+            <a class="action-button hero-action" href="#comparison">Compare a change</a>
+            <a class="action-button hero-action ghost-action" href="#scenario">Diagnose a run</a>
+          </div>
         </div>
         <div class="status-card" aria-live="polite">
           <span class="status-dot"></span>
@@ -45,8 +48,32 @@
 
       <section class="ticker dark-band" aria-hidden="true">
         <div>
-          <span>Benchmark first</span><b>/</b><span>Probe facts</span><b>/</b><span>Model scenario</span><b>/</b><span>Explain delta</span><b>/</b>
-          <span>Benchmark first</span><b>/</b><span>Probe facts</span><b>/</b><span>Model scenario</span><b>/</b><span>Explain delta</span><b>/</b>
+          <span>Diagnose slow runs</span><b>/</b><span>Compare upgrades</span><b>/</b><span>Design systems</span><b>/</b><span>Explain delta</span><b>/</b>
+          <span>Diagnose slow runs</span><b>/</b><span>Compare upgrades</span><b>/</b><span>Design systems</span><b>/</b><span>Explain delta</span><b>/</b>
+        </div>
+      </section>
+
+      <section class="mode-router section-band fade-in" id="workflows">
+        <div class="section-label">
+          <span class="section-num">00</span>
+          <h2 class="section-title">Pick the job</h2>
+        </div>
+        <div class="workflow-grid">
+          <a class="workflow-card" href="#scenario">
+            <span>Diagnose</span>
+            <strong>Why is this slow?</strong>
+            <p>Enter or benchmark a run and get a plain-language bottleneck diagnosis first, with model evidence underneath.</p>
+          </a>
+          <a class="workflow-card primary" href="#comparison">
+            <span>Compare</span>
+            <strong>Did this change help?</strong>
+            <p>Capture before and after a driver update, cable swap, BIOS change, or hardware swap.</p>
+          </a>
+          <a class="workflow-card" href="#designer">
+            <span>Design</span>
+            <strong>How good should this be?</strong>
+            <p>Pick real-world parts and see the expected path before real-world noise enters.</p>
+          </a>
         </div>
       </section>
 
@@ -105,7 +132,7 @@
         <form id="scenario-form" class="panel input-panel">
           <div class="section-label">
             <span class="section-num">03</span>
-            <h2 class="section-title">Scenario</h2>
+            <h2 class="section-title">Diagnose</h2>
             <button type="button" class="icon-button" id="reset-button" aria-label="Reset form" title="Reset form">↺</button>
           </div>
 
@@ -282,6 +309,16 @@
         </form>
 
         <section class="results" id="diagnosis">
+          <div class="panel plain-diagnosis fade-in">
+            <div class="section-label compact">
+              <span class="section-num">A</span>
+              <h2 class="section-title">Plain answer</h2>
+            </div>
+            <strong id="plain-answer">Waiting for scenario</strong>
+            <p id="plain-detail"></p>
+            <div id="plain-actions" class="plain-actions"></div>
+          </div>
+
           <div class="panel metrics" aria-live="polite">
             <div>
               <span class="metric-label">Expected t</span>
@@ -352,6 +389,8 @@
           <div class="comparison-actions">
             <button type="button" class="action-button" id="capture-before-button">Capture before</button>
             <button type="button" class="action-button" id="capture-after-button">Capture after</button>
+            <button type="button" class="action-button ghost-action" id="load-before-button">Load before</button>
+            <button type="button" class="action-button ghost-action" id="load-after-button">Load after</button>
             <button type="button" class="action-button ghost-action" id="swap-comparison-button">Swap</button>
             <button type="button" class="action-button ghost-action" id="clear-comparison-button">Clear</button>
           </div>
@@ -359,6 +398,7 @@
         <div class="comparison-workbench">
           <div id="comparison-summary" class="comparison-summary" aria-live="polite"></div>
           <div id="comparison-table" class="comparison-table" aria-live="polite"></div>
+          <div id="comparison-insights" class="comparison-insights" aria-live="polite"></div>
           <div id="comparison-snapshots" class="comparison-snapshots" aria-live="polite"></div>
         </div>
       </section>

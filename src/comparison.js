@@ -61,7 +61,8 @@ export function compareScenarios(beforeRaw, afterRaw, changeLabel = "System chan
         delta: before.bottleneck?.name === after.bottleneck?.name ? "unchanged" : "moved",
         tone: before.bottleneck?.name === after.bottleneck?.name ? "neutral" : "watch"
       }
-    ]
+    ],
+    insights: buildComparisonInsights({ before, after, expectedPct, observedPct, ratePct })
   };
 }
 
@@ -99,6 +100,55 @@ function classifyComparison(expectedPct, observedPct, before, after) {
     title: "Change is within noise",
     detail: "The before and after states are close enough that more runs are needed before calling it a win or regression."
   };
+}
+
+function buildComparisonInsights({ before, after, expectedPct, observedPct, ratePct }) {
+  const insights = [];
+  const beforeLimit = before.bottleneck?.name || "unknown";
+  const afterLimit = after.bottleneck?.name || "unknown";
+
+  if (beforeLimit !== afterLimit) {
+    insights.push({
+      title: "Bottleneck moved",
+      detail: `${beforeLimit} was the old primary limit; ${afterLimit} is the new primary limit. The change helped one part of the path, but another stage is now setting the ceiling.`
+    });
+  } else {
+    insights.push({
+      title: "Same bottleneck",
+      detail: `${afterLimit} is still the primary limit. If the after state improved, the change helped without moving the ceiling; if it regressed, inspect this stage first.`
+    });
+  }
+
+  if (expectedPct > 6 && observedPct <= 2) {
+    insights.push({
+      title: "Model improved, observed did not",
+      detail: "The hardware path should be faster, but the measured run did not follow. Look for cache state, OS work, antivirus/indexing, thermal state, or a measurement mismatch."
+    });
+  }
+
+  if (expectedPct <= 2 && observedPct > 6) {
+    insights.push({
+      title: "Observed improved more than the model",
+      detail: "The change may have reduced noise rather than changed a modeled ceiling. Repeat the run and check background load before calling it a permanent hardware win."
+    });
+  }
+
+  if (ratePct < -6) {
+    insights.push({
+      title: "Expected rate fell",
+      detail: "The after state has a lower modeled ceiling. Check negotiated link speed, PCIe lane state, topology, cable, dock, or firmware settings."
+    });
+  }
+
+  const afterPrimary = after.stages[0];
+  if (afterPrimary) {
+    insights.push({
+      title: "Next fix to try",
+      detail: `Start with ${afterPrimary.name.toLowerCase()} because it is now the slowest modeled stage at ${formatRate(afterPrimary.effectiveRateMBps)}.`
+    });
+  }
+
+  return insights.slice(0, 4);
 }
 
 function signedDuration(seconds) {

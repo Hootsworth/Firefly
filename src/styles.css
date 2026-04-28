@@ -219,6 +219,13 @@ h1 {
   line-height: 1.02;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 30px;
+}
+
 .status-card {
   grid-column: 1 / -1;
   min-height: auto;
@@ -706,6 +713,69 @@ summary {
   border-top: 1px solid var(--line);
 }
 
+.mode-router {
+  padding-top: 56px;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.workflow-card {
+  position: relative;
+  min-height: 240px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  padding: 22px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.workflow-card:hover {
+  background: var(--paper2);
+  transform: translateX(2px);
+}
+
+.workflow-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--teal);
+}
+
+.workflow-card.primary::before {
+  background: var(--red);
+}
+
+.workflow-card span {
+  color: var(--red);
+  font-family: "Syne Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.workflow-card strong {
+  display: block;
+  margin: 18px 0;
+  color: var(--ink);
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(42px, 4vw, 72px);
+  font-weight: 400;
+  line-height: 0.9;
+}
+
+.workflow-card p {
+  margin: 0;
+  color: var(--ink2);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .clarity-section,
 .reference-section,
 .ground-truth-section,
@@ -874,6 +944,7 @@ summary {
 
 .comparison-summary,
 .comparison-table,
+.comparison-insights,
 .comparison-snapshots {
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
@@ -890,6 +961,7 @@ summary {
 
 .comparison-verdict::before,
 .comparison-row::before,
+.comparison-insight::before,
 .snapshot-card::before {
   content: "";
   position: absolute;
@@ -1005,6 +1077,42 @@ summary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.comparison-insights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.comparison-insight {
+  position: relative;
+  min-height: 150px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  padding: 18px 20px;
+}
+
+.comparison-insight::before {
+  background: var(--blue);
+}
+
+.comparison-insight.empty::before {
+  background: var(--amber);
+}
+
+.comparison-insight strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.comparison-insight p {
+  margin: 14px 0 0;
+  color: var(--ink2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .snapshot-card {
   position: relative;
   min-height: 170px;
@@ -1025,6 +1133,52 @@ summary {
   color: var(--ink2);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.plain-diagnosis {
+  position: relative;
+  padding: 42px 48px;
+}
+
+.plain-diagnosis::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--red);
+}
+
+.plain-diagnosis strong {
+  display: block;
+  color: var(--ink);
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(42px, 4.5vw, 80px);
+  font-weight: 400;
+  line-height: 0.9;
+}
+
+.plain-diagnosis p {
+  margin: 18px 0 0;
+  color: var(--ink2);
+  font-family: "Instrument Serif", serif;
+  font-size: 30px;
+  font-style: italic;
+  line-height: 1.05;
+}
+
+.plain-actions {
+  display: grid;
+  gap: 2px;
+  margin-top: 28px;
+}
+
+.plain-actions span {
+  border: 1px solid rgba(42, 107, 94, 0.25);
+  background: rgba(42, 107, 94, 0.10);
+  color: var(--ink2);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .reference-intro {
@@ -1378,9 +1532,11 @@ summary {
   }
 
   .mode-list,
+  .workflow-grid,
   .confidence-list,
   .history-list,
   .comparison-snapshots,
+  .comparison-insights,
   .designer-controls,
   .designer-map,
   .designer-scores {
@@ -1421,6 +1577,7 @@ summary {
   .metrics,
   .capability-list,
   .mode-list,
+  .workflow-grid,
   .confidence-list,
   .history-list,
   .confidence-ledger,
@@ -1429,6 +1586,7 @@ summary {
   .designer-scores,
   .comparison-row,
   .comparison-snapshots,
+  .comparison-insights,
   .benchmark {
     grid-template-columns: 1fr;
   }

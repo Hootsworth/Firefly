@@ -12,6 +12,8 @@ const designerApplyButton = document.querySelector("#designer-apply-button");
 const comparisonLabel = document.querySelector("#comparison-label");
 const captureBeforeButton = document.querySelector("#capture-before-button");
 const captureAfterButton = document.querySelector("#capture-after-button");
+const loadBeforeButton = document.querySelector("#load-before-button");
+const loadAfterButton = document.querySelector("#load-after-button");
 const swapComparisonButton = document.querySelector("#swap-comparison-button");
 const clearComparisonButton = document.querySelector("#clear-comparison-button");
 const cursor = document.querySelector("#cursor");
@@ -20,6 +22,9 @@ const fields = [...form.elements].filter((element) => element.name);
 const output = {
   summaryVerdict: document.querySelector("#summary-verdict"),
   expectedTime: document.querySelector("#expected-time"),
+  plainAnswer: document.querySelector("#plain-answer"),
+  plainDetail: document.querySelector("#plain-detail"),
+  plainActions: document.querySelector("#plain-actions"),
   observedTime: document.querySelector("#observed-time"),
   deltaTime: document.querySelector("#delta-time"),
   observedRate: document.querySelector("#observed-rate"),
@@ -39,6 +44,7 @@ const output = {
   designerScores: document.querySelector("#designer-scores"),
   comparisonSummary: document.querySelector("#comparison-summary"),
   comparisonTable: document.querySelector("#comparison-table"),
+  comparisonInsights: document.querySelector("#comparison-insights"),
   comparisonSnapshots: document.querySelector("#comparison-snapshots")
 };
 
@@ -102,6 +108,14 @@ captureAfterButton?.addEventListener("click", () => {
   renderComparison();
 });
 
+loadBeforeButton?.addEventListener("click", () => {
+  loadSnapshotIntoForm(comparisonState.before);
+});
+
+loadAfterButton?.addEventListener("click", () => {
+  loadSnapshotIntoForm(comparisonState.after);
+});
+
 swapComparisonButton?.addEventListener("click", () => {
   comparisonState = {
     before: comparisonState.after,
@@ -141,6 +155,7 @@ function render() {
   output.verdictDetail.textContent = result.verdict.detail;
   output.confidenceBand.textContent = `±${result.tolerancePct.toFixed(0)}% band`;
   output.effectiveRate.textContent = `${formatRate(result.effectiveRateMBps)} expected`;
+  renderPlainDiagnosis(result);
 
   output.warningList.replaceChildren(
     ...result.warnings.map((warning) => {
@@ -226,6 +241,41 @@ function renderStaticReference() {
   loadHistory();
 }
 
+function renderPlainDiagnosis(result) {
+  if (!output.plainAnswer || !output.plainDetail || !output.plainActions) return;
+  const primary = result.stages[0];
+  const near = result.stages.filter((stage) => stage.headline === "near constraint").slice(0, 2);
+  const statusLead = {
+    slower: "This run is slower than the model expects.",
+    faster: "This run is faster than the model expects.",
+    expected: "This run is behaving like the model expects.",
+    invalid: "Firefly needs cleaner inputs before it can diagnose this."
+  }[result.verdict.status] || result.verdict.title;
+
+  output.plainAnswer.textContent = primary
+    ? `${statusLead} Likely limit: ${primary.name}.`
+    : statusLead;
+  output.plainDetail.textContent = primary
+    ? `${primary.name} is the lowest ceiling at ${formatRate(primary.effectiveRateMBps)}. ${near.length ? `Also watch ${near.map((stage) => stage.name.toLowerCase()).join(" and ")}.` : "The other modeled stages currently have more headroom."}`
+    : result.verdict.detail;
+
+  const actions = [
+    result.verdict.status === "slower" ? "Run a bounded benchmark for the suspected stage." : "Capture two more runs and compare the median.",
+    primary?.name.includes("Port") ? "Check cable, negotiated link speed, switch counters, and packet loss." : null,
+    primary?.name.includes("Destination") ? "Run burst and sustained writes; watch SLC cache exhaustion and thermals." : null,
+    primary?.name.includes("DMI") ? "Move one device off the chipset path or reduce competing PCH traffic." : null,
+    primary?.name.includes("Memory") ? "Check XMP/EXPO, flex-mode RAM, and background memory pressure." : null
+  ].filter(Boolean).slice(0, 3);
+
+  output.plainActions.replaceChildren(
+    ...actions.map((action) => {
+      const item = document.createElement("span");
+      item.textContent = action;
+      return item;
+    })
+  );
+}
+
 function renderDesignerControls() {
   output.designerControls.replaceChildren(
     ...Object.entries(COMPONENTS).map(([group, options]) => {
@@ -304,10 +354,15 @@ function renderComparison() {
   output.comparisonTable.replaceChildren(
     ...(comparison.ready ? comparison.rows.map(renderComparisonRow) : [emptyComparisonRow()])
   );
+  output.comparisonInsights?.replaceChildren(
+    ...(comparison.ready ? comparison.insights.map(renderComparisonInsight) : [emptyComparisonInsight()])
+  );
   output.comparisonSnapshots.replaceChildren(
     renderSnapshotCard("Before", comparisonState.before),
     renderSnapshotCard("After", comparisonState.after)
   );
+  if (loadBeforeButton) loadBeforeButton.disabled = !comparisonState.before;
+  if (loadAfterButton) loadAfterButton.disabled = !comparisonState.after;
 }
 
 function renderComparisonSummary(comparison) {
@@ -337,6 +392,26 @@ function renderComparisonRow(row) {
     <strong>${row.before}</strong>
     <strong>${row.after}</strong>
     <b>${row.delta}</b>
+  `;
+  return item;
+}
+
+function renderComparisonInsight(insight) {
+  const item = document.createElement("article");
+  item.className = "comparison-insight";
+  item.innerHTML = `
+    <strong>${insight.title}</strong>
+    <p>${insight.detail}</p>
+  `;
+  return item;
+}
+
+function emptyComparisonInsight() {
+  const item = document.createElement("article");
+  item.className = "comparison-insight empty";
+  item.innerHTML = `
+    <strong>What Firefly will explain</strong>
+    <p>Once both states are captured, this panel separates real path movement from measurement noise and names the next fix to try.</p>
   `;
   return item;
 }
@@ -373,6 +448,21 @@ function renderSnapshotCard(label, snapshot) {
     <small>${new Date(snapshot.recordedAt).toLocaleString()}</small>
   `;
   return item;
+}
+
+function loadSnapshotIntoForm(snapshot) {
+  if (!snapshot?.scenario) return;
+  Object.entries(snapshot.scenario).forEach(([name, value]) => {
+    const field = form.elements[name];
+    if (!field) return;
+    if (field.type === "checkbox") {
+      field.checked = value === true || value === "on";
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    } else {
+      setField(name, value);
+    }
+  });
+  render();
 }
 
 function signedPercent(value) {

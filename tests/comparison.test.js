@@ -38,6 +38,7 @@ test("comparison identifies an improved after state", () => {
   assert.equal(comparison.status.tone, "good");
   assert.ok(comparison.expectedPct > 0);
   assert.ok(comparison.rows.some((row) => row.label === "Primary limit"));
+  assert.ok(comparison.insights.some((insight) => insight.title === "Next fix to try"));
 });
 
 test("comparison identifies a regressed after state", () => {
@@ -49,4 +50,15 @@ test("comparison identifies a regressed after state", () => {
 
   assert.equal(comparison.status.tone, "bad");
   assert.ok(comparison.observedPct < 0);
+});
+
+test("comparison explains model and observed mismatch", () => {
+  const comparison = compareScenarios(before, {
+    ...before,
+    observedSeconds: before.observedSeconds,
+    destinationWriteMBps: 5000
+  }, "SSD swap");
+
+  assert.ok(comparison.expectedPct > 6);
+  assert.ok(comparison.insights.some((insight) => insight.title === "Model improved, observed did not"));
 });
