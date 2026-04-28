@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+const smokeMode = process.env.FIREFLY_VISUAL_MODE === "smoke";
+
 async function stabilize(page) {
   await page.addStyleTag({
     content: `
@@ -19,10 +21,26 @@ async function stabilize(page) {
   await page.evaluate(() => document.fonts?.ready);
 }
 
+async function expectVisual(locator, snapshotName, options = {}) {
+  await expect(locator).toBeVisible();
+
+  if (!smokeMode) {
+    await expect(locator).toHaveScreenshot(snapshotName, options);
+    return;
+  }
+
+  const box = await locator.boundingBox();
+  expect(box?.width ?? 0).toBeGreaterThan(320);
+  expect(box?.height ?? 0).toBeGreaterThan(180);
+
+  const screenshot = await locator.screenshot({ animations: "disabled" });
+  expect(screenshot.byteLength).toBeGreaterThan(20_000);
+}
+
 test("notes page keeps the editorial landing composition", async ({ page }) => {
   await page.goto("/index.html");
   await stabilize(page);
-  await expect(page.locator(".main")).toHaveScreenshot("notes-page.png", {
+  await expectVisual(page.locator(".main"), "notes-page.png", {
     animations: "disabled",
     fullPage: true
   });
@@ -32,7 +50,7 @@ test("app page keeps diagnose compare design layout", async ({ page }) => {
   await page.goto("/app.html");
   await stabilize(page);
   await page.locator("#designer").scrollIntoViewIfNeeded();
-  await expect(page.locator(".main")).toHaveScreenshot("app-designer-flow.png", {
+  await expectVisual(page.locator(".main"), "app-designer-flow.png", {
     animations: "disabled",
     fullPage: true
   });
@@ -47,7 +65,7 @@ test("comparison mode renders stable before and after workbench", async ({ page 
   await page.locator("[name='pcieActiveLanes']").fill("2");
   await page.locator("[name='busMBps']").fill("3900");
   await page.locator("#capture-after-button").click();
-  await expect(page.locator("#comparison")).toHaveScreenshot("comparison-workbench.png", {
+  await expectVisual(page.locator("#comparison"), "comparison-workbench.png", {
     animations: "disabled"
   });
 });

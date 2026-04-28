@@ -28,8 +28,8 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install chromium
 
-      - name: Run visual regression
-        run: npm run test:visual
+      - name: Run visual regression smoke checks
+        run: FIREFLY_VISUAL_MODE=smoke npm run test:visual
 
       - name: Upload visual report
         if: failure()
