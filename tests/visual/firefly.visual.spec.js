@@ -9,6 +9,9 @@ async function stabilize(page) {
         transition-duration: 0s !important;
         scroll-behavior: auto !important;
       }
+      body, body * {
+        font-family: Arial, Helvetica, sans-serif !important;
+      }
       #cursor, body::after { display: none !important; }
       .fade-in { opacity: 1 !important; transform: none !important; }
     `
