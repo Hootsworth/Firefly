@@ -10,22 +10,29 @@ It models expected process time (`t`), compares it with observed time (`t'`), an
 
 - Builds an expected-time model from explicit service-rate ceilings.
 - Compares modeled time with observed runtime.
+- Presents a plain-language diagnosis before the detailed model ledger.
 - Ranks the most likely constraints instead of blaming one component blindly.
 - Handles edge cases such as SLC cache exhaustion, active PCIe lane bifurcation, PCH/DMI contention, thermal throttling, packet loss, queue depth, compression, flex-mode RAM, and heterogeneous CPU cores.
 - Includes safe local benchmark probes for RAM, read I/O, burst writes, sustained writes, and tiny-file queue pressure.
 - Includes best-effort hardware probes using OS APIs.
 - Lets you design a theoretical machine from named real-world components and see what it should be capable of.
-- Lets you compare before/after states for driver updates, cable swaps, BIOS changes, firmware changes, or tuning passes.
+- Lets you compare before/after states for driver updates, cable swaps, BIOS changes, firmware changes, or tuning passes, then explains whether the bottleneck moved.
 - Packages as a Tauri desktop app.
 
 ## Current Status
 
 Firefly is an early engineering preview. The deterministic model, browser app, benchmark runners, comparison mode, system designer, PDF export, local macOS bundle, and Windows build workflow are implemented. Deep privileged counters are scaffolded but not installed, because production-grade native helpers require signed binaries, explicit user consent, and OS-specific privilege flows.
 
-## Screens
+## App Surfaces
 
 - `index.html`: explanation and product notes.
 - `app.html`: system designer, benchmark engine, hardware probe, scenario model, diagnosis, comparison mode, and PDF report export.
+
+The app is organized around three user jobs:
+
+- **Diagnose**: answer "why is this slow?" from a measured or modeled run.
+- **Compare**: answer "did this change help?" using before/after snapshots.
+- **Design**: answer "how good should this configuration be?" before real-world noise enters.
 
 ## Requirements
 
@@ -178,6 +185,20 @@ Use comparison mode to answer questions like:
 
 Capture a before scenario, adjust the model or benchmark results, capture after, and Firefly reports expected-time change, observed-time change, rate change, and bottleneck movement.
 
+Comparison mode also produces interpretation cards:
+
+- whether the bottleneck stayed put or moved
+- whether the modeled path improved while the observed run did not
+- whether observed gains are likely noise reduction rather than a true ceiling change
+- whether negotiated links, cables, topology, or firmware settings likely regressed
+- which stage to inspect next
+
+Captured before/after states can be loaded back into the scenario form for inspection or further tuning.
+
+## PDF Reports
+
+Firefly can export an aesthetic local PDF report for a scenario. Reports include the expected time, observed time, delta, primary constraints, warnings, confidence notes, and relevant model inputs. The report is generated client-side and does not require a network service.
+
 ## Model Notes
 
 Firefly calculates transfer volume from logical file size and compression ratio, then builds a stage stack:
@@ -204,6 +225,21 @@ Planned helper directions:
 - Linux: polkit-gated helper for `perf`, `nvme-cli`, `lspci -vv`, and `/sys` topology counters
 
 These helpers should not be silently installed. They require explicit user consent and platform-specific signing/review.
+
+## Roadmap
+
+Firefly is ready as a local-first engineering preview, but the following work is required before treating it as a public consumer-grade diagnostic product:
+
+- Add confidence scoring that explains how much of a conclusion came from measured data, probed hardware facts, or user-supplied assumptions.
+- Add fix suggestions tied to each bottleneck, such as cable checks, lane-state checks, cooling checks, filesystem checks, and topology moves.
+- Add saved projects and historical baselines so users can track whether a system changes over days or weeks.
+- Add repeat-run statistics with medians, variance, and outlier detection to separate hardware changes from OS noise.
+- Expand the hardware database with versioned modeling constants and source notes for CPUs, SSDs, GPUs, NICs, docks, chipsets, and memory kits.
+- Implement signed native helpers for deeper platform counters, with explicit consent and uninstall paths.
+- Add release signing/notarization for macOS and Windows before distributing installers broadly.
+- Add automated visual regression tests for the web UI and desktop shell.
+- Add import/export for comparison snapshots so users can share reproducible diagnostic cases.
+- Add onboarding presets for non-expert users: "file copy is slow", "external drive is slow", "network transfer is slow", and "upgrade check".
 
 ## Repository Layout
 
