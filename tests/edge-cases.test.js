@@ -28,6 +28,8 @@ const baseScenario = {
 test("database gives PCIe 4.0 x4 after 128b/130b encoding overhead", () => {
   assert.equal(Math.round(pcieMBps(4, 4)), 7877);
   assert.equal(Math.round(THEORETICAL_MAXIMUMS.protocols["dmi-4-x8"].MBps), 15754);
+  assert.equal(THEORETICAL_MAXIMUMS.protocols["ethernet-400gbe"].MBps, 50000);
+  assert.ok(THEORETICAL_MAXIMUMS.sources["pcisig-pcie6-faq"].url.startsWith("https://"));
 });
 
 test("active PCIe link state is used instead of maximum link state", () => {

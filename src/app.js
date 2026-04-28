@@ -7,6 +7,7 @@ const form = document.querySelector("#scenario-form");
 const preset = document.querySelector("#preset");
 const resetButton = document.querySelector("#reset-button");
 const probeButton = document.querySelector("#probe-button");
+const nativeHelperButton = document.querySelector("#native-helper-button");
 const reportButton = document.querySelector("#report-button");
 const designerApplyButton = document.querySelector("#designer-apply-button");
 const comparisonLabel = document.querySelector("#comparison-label");
@@ -37,6 +38,7 @@ const output = {
   recommendations: document.querySelector("#recommendations"),
   benchmarkList: document.querySelector("#benchmark-list"),
   probeOutput: document.querySelector("#probe-output"),
+  nativeHelperOutput: document.querySelector("#native-helper-output"),
   confidenceLedger: document.querySelector("#confidence-ledger"),
   historyList: document.querySelector("#history-list"),
   designerControls: document.querySelector("#designer-controls"),
@@ -84,6 +86,10 @@ resetButton.addEventListener("click", () => {
 
 probeButton?.addEventListener("click", async () => {
   await runProbe();
+});
+
+nativeHelperButton?.addEventListener("click", async () => {
+  await runNativeHelperStatus();
 });
 
 reportButton?.addEventListener("click", async () => {
@@ -301,22 +307,24 @@ function renderDesignerControls() {
 function renderDesigner() {
   const build = scoreBuild(designerSelection);
   const nodes = [
-    ["CPU", build.parts.cpu.label, build.specs.cpu],
-    ["RAM", build.parts.memory.label, build.specs.memory],
-    ["GPU", build.parts.gpu.label, build.specs.gpu],
-    ["Storage", build.parts.storage.label, build.specs.storage],
-    ["Network", build.parts.network.label, build.specs.network],
-    ["Topology", build.parts.topology.label, build.specs.topology]
+    ["CPU", "cpu", build.parts.cpu.label, build.specs.cpu],
+    ["RAM", "memory", build.parts.memory.label, build.specs.memory],
+    ["GPU", "gpu", build.parts.gpu.label, build.specs.gpu],
+    ["Storage", "storage", build.parts.storage.label, build.specs.storage],
+    ["Network", "network", build.parts.network.label, build.specs.network],
+    ["Topology", "topology", build.parts.topology.label, build.specs.topology]
   ];
 
   output.designerMap.replaceChildren(
-    ...nodes.map(([label, value, specs], index) => {
+    ...nodes.map(([label, group, value, specs], index) => {
+      const provenance = build.provenance[group] || [];
       const node = document.createElement("article");
       node.className = `design-node n${index}`;
       node.innerHTML = `
         <span>${label}</span>
         <strong>${value}</strong>
         <ul class="component-specs">${specs.map((spec) => `<li>${spec}</li>`).join("")}</ul>
+        <small class="source-note">${provenance.join(" / ")}</small>
       `;
       return node;
     })
@@ -523,6 +531,31 @@ async function runProbe() {
   }
 }
 
+async function runNativeHelperStatus() {
+  nativeHelperButton.disabled = true;
+  nativeHelperButton.textContent = "Reading counters...";
+  output.nativeHelperOutput.innerHTML = "<p>Querying Tauri native helper boundary...</p>";
+
+  try {
+    const invoke = window.__TAURI__?.core?.invoke;
+    if (!invoke) {
+      output.nativeHelperOutput.innerHTML = "<p>Native helper commands are available only in the Tauri desktop app.</p>";
+      return;
+    }
+    const [status, manifest, snapshot] = await Promise.all([
+      invoke("native_helper_status"),
+      invoke("native_helper_manifest"),
+      invoke("native_counter_snapshot")
+    ]);
+    output.nativeHelperOutput.replaceChildren(renderNativeHelper({ status, manifest, snapshot }));
+  } catch (error) {
+    output.nativeHelperOutput.innerHTML = `<p>Native helper check failed: ${error.message}</p>`;
+  } finally {
+    nativeHelperButton.disabled = false;
+    nativeHelperButton.textContent = "Native counter status";
+  }
+}
+
 async function runBenchmark(id, button) {
   const target = document.querySelector(`#benchmark-result-${CSS.escape(id)}`);
   button.disabled = true;
@@ -613,6 +646,34 @@ function renderProbe(data) {
     setField(button.dataset.probeField, button.dataset.probeValue);
     if (button.dataset.probeField === "preset") applyPreset();
   });
+  return wrapper;
+}
+
+function renderNativeHelper({ status, manifest, snapshot }) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "probe-card native-helper-card";
+  const counters = snapshot.counters?.length
+    ? snapshot.counters.map((counter) => `<li><b>${counter.name}</b>: ${counter.value} ${counter.unit} (${counter.confidence}, ${counter.source})</li>`).join("")
+    : "<li>No safe counters exposed.</li>";
+  const blocked = snapshot.blocked?.length ? snapshot.blocked.map((item) => `<li>${item}</li>`).join("") : "<li>No blocked counters reported.</li>";
+  const signing = manifest.signing_requirements?.length ? manifest.signing_requirements.map((item) => `<li>${item}</li>`).join("") : "<li>No signing requirements reported.</li>";
+  const supported = status.supported_counters?.length ? status.supported_counters.map((item) => `<li>${item}</li>`).join("") : "<li>No supported counters reported.</li>";
+
+  wrapper.innerHTML = `
+    <div class="stage-top">
+      <strong>Native helper ${manifest.api_version}</strong>
+      <span>${manifest.platform}</span>
+    </div>
+    <p>${status.note}</p>
+    <h3>Safe counters now</h3>
+    <ul>${counters}</ul>
+    <h3>Supported surfaces</h3>
+    <ul>${supported}</ul>
+    <h3>Blocked until signed/elevated</h3>
+    <ul>${blocked}</ul>
+    <h3>Public release signing requirements</h3>
+    <ul>${signing}</ul>
+  `;
   return wrapper;
 }
 

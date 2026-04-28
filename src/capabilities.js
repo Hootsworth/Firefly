@@ -20,8 +20,8 @@ export const REQUIREMENT_STATUS = [
   {
     name: "Theoretical maximums database",
     status: "met",
-    implementation: "Local database includes protocol ceilings and PCIe generation/lane calculations with encoding overhead.",
-    gap: "Vendor-specific SSD cache sizes and controller behavior need a continuously maintained catalog."
+    implementation: "Local database now includes sourced protocol ceilings, PCIe generation/lane calculations, and a larger real-component catalog with provenance notes.",
+    gap: "Vendor-specific SSD cache sizes and controller behavior still need continuous maintenance and field validation."
   },
   {
     name: "Background noise isolation",
@@ -37,9 +37,9 @@ export const REQUIREMENT_STATUS = [
   },
   {
     name: "Privilege escalation",
-    status: "blocked",
-    implementation: "The app identifies where elevated/native helpers are required.",
-    gap: "Direct memory-controller or I/O-bus access requires administrator/root privileges and, on many systems, signed kernel drivers."
+    status: "partial",
+    implementation: "Tauri now exposes a native helper manifest, safe user-space counter snapshot, and explicit signed-helper boundary.",
+    gap: "Direct memory-controller or I/O-bus access still requires administrator/root privileges and platform-specific signing."
   }
 ];
 

@@ -21,7 +21,7 @@ It models expected process time (`t`), compares it with observed time (`t'`), an
 
 ## Current Status
 
-Firefly is an early engineering preview. The deterministic model, browser app, benchmark runners, comparison mode, system designer, PDF export, local macOS bundle, and Windows build workflow are implemented. Deep privileged counters are scaffolded but not installed, because production-grade native helpers require signed binaries, explicit user consent, and OS-specific privilege flows.
+Firefly is a 1.0 local-first engineering preview. The deterministic model, browser app, benchmark runners, comparison mode, sourced system designer, PDF export, local macOS bundle, Windows build workflow, native helper manifest, safe native counter snapshot, and visual regression workflow are implemented. Deep privileged counters are deliberately gated behind a signed-helper boundary because production-grade access requires explicit consent and OS-specific privilege flows.
 
 ## App Surfaces
 
@@ -72,6 +72,14 @@ npm test
 ```
 
 The test suite covers the deterministic model, benchmark definitions/runners, edge cases, comparison mode, PDF generation, hardware redaction, and the system designer catalog.
+
+Run visual regression tests:
+
+```bash
+npm run test:visual
+```
+
+The visual suite uses Playwright snapshots for the notes page, the app designer flow, and comparison mode on desktop and mobile Chromium. The GitHub workflow for visual regression runs on macOS so the committed baselines stay stable.
 
 ## Build Web Assets
 
@@ -128,6 +136,14 @@ This repository includes a production workflow:
 
 It runs on `windows-latest`, installs Node and Rust, runs tests, builds the Tauri Windows package, and uploads the Windows artifacts.
 
+The repository also includes:
+
+```text
+.github/workflows/visual-regression.yml
+```
+
+It runs Playwright screenshot regression tests and uploads the visual report on failure.
+
 After pushing to GitHub, open the repository's **Actions** tab and run **Desktop builds** manually, or push to `main` to trigger it automatically.
 
 Cross-compiling Windows from macOS is not the recommended path. It needs extra Windows resource tooling such as `llvm-rc`; the workflow avoids that by using a Windows runner.
@@ -166,13 +182,13 @@ Benchmarks are bounded and use temporary files where needed. Results can be appl
 The system designer includes named, real-world component classes:
 
 - Apple Silicon, Intel Core/Core Ultra/Xeon, AMD Ryzen/Threadripper/EPYC
-- NVIDIA, AMD, Intel, and Apple GPU stages
+- NVIDIA, AMD, Intel, and Apple GPU stages, including newer high-end desktop parts as modeling entries
 - DDR4, DDR5, LPDDR5X, workstation, and server memory configurations
 - SATA, PCIe 3.0, PCIe 4.0, PCIe 5.0, and external USB SSDs
-- 1 GbE, 2.5 GbE, 10 GbE, 25 GbE, 40 GbE, 100 GbE, USB Ethernet, and Wi-Fi scenarios
-- CPU-direct, Intel DMI, AMD chipset, Thunderbolt dock, and USB hub topologies
+- 1 GbE, 2.5 GbE, 10 GbE, 25 GbE, 40 GbE, 100 GbE, 200 GbE, 400 GbE, USB Ethernet, Wi-Fi 6E, and Wi-Fi 7 scenarios
+- CPU-direct, Intel DMI, AMD chipset, PCIe switch, Thunderbolt dock, and USB hub topologies
 
-The numbers are modeling constants, not universal benchmark guarantees. Real machines vary by firmware, cooling, filesystem, power state, driver, cable, queue depth, and workload.
+The catalog carries source/provenance labels for official specs and calibrated model constants. The numbers are modeling constants, not universal benchmark guarantees. Real machines vary by firmware, cooling, filesystem, power state, driver, cable, queue depth, and workload.
 
 ## Comparison Mode
 
@@ -214,9 +230,9 @@ Firefly calculates transfer volume from logical file size and compression ratio,
 
 The expected throughput is the slowest effective stage adjusted by queue depth, concurrency, packet loss, OS overhead, architecture penalty, and thermal throttling. The app reports an uncertainty band because real systems include noise from caches, interrupt coalescing, antivirus scans, filesystem metadata, power states, scheduler placement, and measurement granularity.
 
-## Privileged Native Helpers
+## Native Helpers
 
-The Tauri app includes a Rust command surface for native helper status and future privileged counter plans. The current helper reports what is available and what still requires elevation.
+The Tauri app includes a Rust command surface for native helper status, a signed-helper manifest, and a safe user-space counter snapshot. The current helper can report process elevation state, best-effort load, and best-effort memory pressure without silently installing privileged services.
 
 Planned helper directions:
 
@@ -234,10 +250,10 @@ Firefly is ready as a local-first engineering preview, but the following work is
 - Add fix suggestions tied to each bottleneck, such as cable checks, lane-state checks, cooling checks, filesystem checks, and topology moves.
 - Add saved projects and historical baselines so users can track whether a system changes over days or weeks.
 - Add repeat-run statistics with medians, variance, and outlier detection to separate hardware changes from OS noise.
-- Expand the hardware database with versioned modeling constants and source notes for CPUs, SSDs, GPUs, NICs, docks, chipsets, and memory kits.
-- Implement signed native helpers for deeper platform counters, with explicit consent and uninstall paths.
+- Add versioned update channels for the hardware constants catalog.
+- Turn the signed-helper manifest into installable, signed helpers with explicit consent and uninstall paths.
 - Add release signing/notarization for macOS and Windows before distributing installers broadly.
-- Add automated visual regression tests for the web UI and desktop shell.
+- Expand visual regression coverage to PDF output and the packaged desktop shell.
 - Add import/export for comparison snapshots so users can share reproducible diagnostic cases.
 - Add onboarding presets for non-expert users: "file copy is slow", "external drive is slow", "network transfer is slow", and "upgrade check".
 

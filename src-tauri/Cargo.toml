@@ -1,6 +1,6 @@
 [package]
 name = "firefly"
-version = "0.1.0"
+version = "1.0.0"
 description = "Deterministic system-path diagnostics for expected vs observed performance."
 authors = ["Firefly"]
 edition = "2021"
