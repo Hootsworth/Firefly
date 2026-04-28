@@ -1,38 +1,318 @@
 # Firefly
 
-Firefly is a deterministic system-path diagnostics app for answering one question:
+Firefly is a deterministic performance diagnostics app for understanding how a computer should behave.
 
-> How long should this operation take on this machine, and where did the missing time go?
+It answers one core question:
 
-It models expected process time (`t`), compares it with observed time (`t'`), and explains the delta across storage, bus, memory, CPU, GPU, network, topology, queueing, and thermal constraints. It is not trying to be another synthetic benchmark. It is a reasoning tool for understanding whether a machine is behaving the way its parts and topology imply it should.
+> Given this machine, this topology, and this operation, how long should it take, how long did it actually take, and where did the missing time go?
 
-## What Firefly Does
+Firefly is not trying to be another synthetic benchmark. It is a systems reasoning tool. Instead of only saying that a disk, cable, CPU, GPU, bus, or network path is "fast" or "slow", Firefly builds an expected-time model, compares it against observed runtime, and explains the delta across the actual data path.
 
-- Builds an expected-time model from explicit service-rate ceilings.
-- Compares modeled time with observed runtime.
-- Presents a plain-language diagnosis before the detailed model ledger.
-- Ranks the most likely constraints instead of blaming one component blindly.
-- Handles edge cases such as SLC cache exhaustion, active PCIe lane bifurcation, PCH/DMI contention, thermal throttling, packet loss, queue depth, compression, flex-mode RAM, and heterogeneous CPU cores.
-- Includes safe local benchmark probes for RAM, read I/O, burst writes, sustained writes, and tiny-file queue pressure.
-- Includes best-effort hardware probes using OS APIs.
-- Lets you design a theoretical machine from named real-world components and see what it should be capable of.
-- Lets you compare before/after states for driver updates, cable swaps, BIOS changes, firmware changes, or tuning passes, then explains whether the bottleneck moved.
-- Packages as a Tauri desktop app.
+## Why Firefly Exists
 
-## Current Status
+Most performance tools measure one component in isolation. Real machines do not fail in isolation.
 
-Firefly is a 1.0 local-first engineering preview. The deterministic model, browser app, benchmark runners, comparison mode, sourced system designer, PDF export, local macOS bundle, Windows build workflow, native helper manifest, safe native counter snapshot, and visual regression workflow are implemented. Deep privileged counters are deliberately gated behind a signed-helper boundary because production-grade access requires explicit consent and OS-specific privilege flows.
+A file transfer, render pipeline, copy job, network write, or storage operation may move through:
+
+- source storage
+- destination storage
+- PCIe lanes
+- USB or Thunderbolt links
+- chipset bridges
+- DMI/PCH paths
+- memory copies
+- CPU scheduling
+- GPU transforms
+- network links
+- filesystem metadata
+- queues, thermals, cache behavior, and OS noise
+
+Firefly models that pipeline before judging the result. The goal is not just to produce a score. The goal is to explain whether the machine is performing the way its hardware, topology, and workload imply it should.
+
+## Current Release
+
+Firefly `1.0.0` is a local-first engineering preview with production-oriented packaging, tests, and documentation.
+
+Implemented today:
+
+- deterministic expected-time model
+- observed-vs-modeled delta analysis
+- plain-language diagnosis cards
+- benchmark engine
+- hardware probe adapters
+- comparison mode
+- visual system designer
+- sourced hardware constants catalog
+- PDF report export
+- Tauri desktop app packaging
+- Windows build workflow
+- native helper command surface
+- signed-helper manifest boundary
+- visual regression test workflow
+
+Firefly is still intentionally conservative around privileged hardware access. It does not silently install kernel drivers, services, or root helpers. Deeper counters are exposed through a signed-helper architecture that is ready for future platform-specific signed installers.
+
+## Core Features
+
+### Deterministic Expected-Time Modeling
+
+Firefly estimates expected time, `t`, from service-rate ceilings and workload facts, then compares it against observed time, `t'`.
+
+The model accounts for:
+
+- logical file size
+- compression ratio
+- source read throughput
+- destination write throughput
+- port and protocol ceilings
+- PCIe generation and active lane count
+- bus and bridge bandwidth
+- memory copy bandwidth
+- CPU transform rate
+- optional GPU transform rate
+- topology penalties
+- queue depth
+- concurrent jobs
+- packet loss
+- OS overhead
+- thermal throttling
+- architecture penalties
+
+The output includes:
+
+- expected time
+- observed time
+- delta
+- effective throughput
+- primary bottleneck
+- warning ledger
+- confidence notes
+- stage-by-stage model breakdown
+
+### Diagnosis Mode
+
+Diagnosis mode is built for the practical question users actually ask:
+
+> Why is this slow?
+
+Firefly translates the model into direct explanations such as:
+
+- the negotiated PCIe link is below the component's maximum
+- the storage write path is below the bus ceiling
+- the chipset bridge is shared and saturated
+- thermal conditions explain most of the delta
+- packet loss or OS overhead widened the expected range
+- the observed result is faster than the modeled path, so the assumptions are probably conservative or cache-assisted
+
+The app shows the human-readable diagnosis first, then the detailed ledger for users who want to inspect the reasoning.
+
+### Comparison Mode
+
+Comparison mode answers:
+
+> Did this change actually help?
+
+It is designed for before/after analysis after:
+
+- driver updates
+- BIOS changes
+- firmware updates
+- cable swaps
+- port changes
+- lane-state changes
+- cooling changes
+- topology changes
+- storage upgrades
+- network changes
+
+Capture a before state, make the change, capture an after state, and Firefly compares:
+
+- modeled expected time
+- observed time
+- effective rate
+- bottleneck movement
+- stage-level changes
+- whether the change improved the actual ceiling or only reduced noise
+- whether a new bottleneck appeared downstream
+
+This makes comparison mode useful for upgrade validation and debugging regressions.
+
+### Visual System Designer
+
+The system designer lets users build a theoretical machine from named components and estimate what that system should be capable of before benchmarking anything.
+
+The catalog includes modeling entries for:
+
+- Apple Silicon, Intel Core/Core Ultra/Xeon, AMD Ryzen/Threadripper/EPYC
+- NVIDIA, AMD, Intel, and Apple GPU paths
+- DDR4, DDR5, LPDDR5X, workstation, and server memory configurations
+- SATA, PCIe 3.0, PCIe 4.0, PCIe 5.0, and external USB storage
+- 1 GbE through 400 GbE network paths
+- Wi-Fi 6E and Wi-Fi 7 scenarios
+- CPU-direct, chipset, Intel DMI, AMD chipset, PCIe switch, Thunderbolt dock, and USB hub topologies
+
+The designer produces:
+
+- expected transfer score
+- expected effective rate
+- bottleneck prediction
+- topology notes
+- provenance labels for selected parts
+- configuration warnings
+
+This is useful for PC builders, workstation planning, infrastructure reasoning, and "should this upgrade matter?" analysis.
+
+### Larger Sourced Hardware Constants Database
+
+Firefly now includes a larger local constants database for protocol ceilings, component classes, and real-world modeling presets.
+
+The database includes:
+
+- PCIe generation and lane-rate ceilings with encoding overhead
+- Ethernet line-rate conversions
+- USB and Thunderbolt-style external path ceilings
+- DMI/chipset bridge ceilings
+- named CPU, GPU, storage, memory, network, and topology presets
+- source/provenance metadata exposed in the UI
+
+The catalog distinguishes between:
+
+- official specification constants
+- vendor-published product figures
+- calibrated modeling assumptions
+- conservative local heuristics
+
+These values are modeling constants, not universal benchmark promises. Real performance depends on firmware, drivers, thermals, power state, filesystem, queue depth, cable quality, topology, and workload shape.
+
+Representative sources embedded in the catalog include:
+
+- PCI-SIG PCI Express specifications: https://pcisig.com/pci-express-6.0-specification
+- Intel product specifications: https://www.intel.com/content/www/us/en/products/sku/236773/intel-core-i9-processor-14900k-36m-cache-up-to-6-00-ghz.html
+- AMD EPYC product specifications: https://www.amd.com/en/products/processors/server/epyc/4th-generation-9004-and-8004-series/amd-epyc-9654.html
+- NVIDIA GeForce specifications: https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/
+- Samsung NVMe SSD specifications: https://www.samsung.com/us/memory-storage/nvme-ssd/990-pro-2tb-nvme-pcie-gen-4-mz-v9p2t0b-am/
+- USB4 specification overview: https://www.usb.org/usb4
+- IEEE 802.3 Ethernet standard: https://standards.ieee.org/standard/802_3-2022.html
+
+### Benchmark Engine
+
+Firefly includes bounded local benchmark probes that can feed measured values back into the model.
+
+Implemented benchmark plans:
+
+- Pure RAM micro-benchmark
+- Burst I/O write benchmark
+- Read I/O benchmark
+- Sustained write probe
+- Tiny-file queue pressure test
+- Guided DMI/PCH bottleneck test
+
+The benchmarks are intentionally bounded. They use temporary files where needed and avoid destructive or unbounded stress patterns.
+
+The benchmark engine is designed to isolate different layers:
+
+- RAM copy behavior
+- storage read ceilings
+- burst write behavior
+- sustained write behavior
+- queue behavior with many small files
+- topology-specific chipset bottlenecks
+
+### Hardware Probe
+
+Firefly can collect best-effort hardware facts from the host system.
+
+Probe adapters use:
+
+- macOS: `system_profiler`, `sysctl`, `uptime`
+- Linux: `/proc`, `lsblk`, `lspci`, `ip`, load and memory files
+- Windows: PowerShell CIM/WMI
+
+Probe output is redacted before display. Firefly removes stable identifiers such as serial numbers, UUIDs, MAC addresses, IP addresses, and network signatures.
+
+Current probe status:
+
+- low-level hardware polling: implemented as best-effort user-space adapters
+- topology mapping: implemented for modeled CPU-attached, chipset-attached, DMI/PCH, PCIe switch, dock, and hub paths
+- exact motherboard routing: still depends on OS-exposed PCI trees and board metadata
+- deep bus counters: gated behind future signed helpers
+
+### Native Helper Layer
+
+The Tauri desktop app includes a Rust native command surface.
+
+Implemented today:
+
+- native helper status command
+- signed-helper manifest
+- safe user-space counter snapshot
+- process elevation detection
+- best-effort load hints
+- best-effort memory pressure hints
+- explicit blocked-counter reporting
+- platform-specific signing requirements in the helper manifest
+
+Firefly deliberately separates safe user-space probes from privileged counters. Direct memory-controller counters, detailed bus telemetry, ETW providers, `powermetrics`, `perf`, vendor tools, and kernel-level driver access require explicit user consent and platform-specific signing.
+
+Future signed helpers should be installable, auditable, removable, and code-signed.
+
+### PDF Report Export
+
+Firefly can export a local PDF report for a scenario.
+
+Reports include:
+
+- expected time
+- observed time
+- delta
+- effective throughput
+- bottleneck summary
+- warnings
+- confidence notes
+- selected model inputs
+
+The report is generated locally in the browser. No cloud service is required.
+
+### Visual Regression Tests
+
+Firefly includes Playwright visual coverage for:
+
+- notes/product page
+- app designer flow
+- comparison mode
+- desktop Chromium
+- mobile Chromium
+
+Local visual tests use committed screenshot baselines.
+
+CI visual checks run in a smoke mode that validates layout visibility, dimensions, and real screenshot capture output. This keeps GitHub Actions stable across host rendering differences while preserving strict baseline testing for local review.
 
 ## App Surfaces
 
-- `index.html`: explanation and product notes.
-- `app.html`: system designer, benchmark engine, hardware probe, scenario model, diagnosis, comparison mode, and PDF report export.
+Firefly is split into two main surfaces:
 
-The app is organized around three user jobs:
+- `index.html`: product explanation, design language, and conceptual overview
+- `app.html`: actual diagnostics app, system designer, benchmark engine, probe, model, comparison mode, and PDF export
 
-- **Diagnose**: answer "why is this slow?" from a measured or modeled run.
-- **Compare**: answer "did this change help?" using before/after snapshots.
-- **Design**: answer "how good should this configuration be?" before real-world noise enters.
+The app is organized around three jobs:
+
+- **Diagnose**: understand why a real or modeled operation is slow
+- **Compare**: understand whether a change helped or moved the bottleneck
+- **Design**: build a hypothetical machine and estimate what it should be capable of
+
+## Safety And Privacy
+
+Firefly is local-first.
+
+- No account is required.
+- No cloud service is required for modeling.
+- Probe output stays local.
+- Raw hardware summaries are redacted before display.
+- Benchmark files are temporary and bounded.
+- No privileged helper is installed by default.
+- No kernel driver is installed by default.
+- Native helper boundaries are explicit.
+- Deep counters require future signed helpers and user consent.
 
 ## Requirements
 
@@ -44,8 +324,13 @@ For the web app:
 For desktop builds:
 
 - Rust stable toolchain
-- Tauri system prerequisites for your OS
-- Windows builds should be produced on Windows or through the included GitHub Actions workflow
+- Tauri system prerequisites for the target OS
+
+For visual tests:
+
+- Playwright Chromium
+
+Windows desktop packages should be built on Windows or through the included GitHub Actions workflow.
 
 ## Install
 
@@ -53,7 +338,29 @@ For desktop builds:
 npm install
 ```
 
-## Run The Local Web App
+## Quick Start
+
+```bash
+npm install
+npm start
+```
+
+Then open:
+
+```text
+http://127.0.0.1:4173/app.html
+```
+
+Use the app in this order for the clearest first run:
+
+1. Open **Design** to create or choose a machine profile.
+2. Run a safe benchmark probe if you want measured local values.
+3. Apply the benchmark result to the model.
+4. Enter the observed runtime for the operation.
+5. Read the diagnosis and export a PDF report if needed.
+6. Capture a before/after comparison when testing a change.
+
+## Run The Web App
 
 ```bash
 npm start
@@ -65,13 +372,21 @@ Open:
 http://127.0.0.1:4173/app.html
 ```
 
+## Run The Hardware Probe
+
+```bash
+npm run probe
+```
+
+The probe prints a redacted local hardware summary. In the web app and desktop app, the probe surface is available from the diagnostics page.
+
 ## Run Tests
+
+Run unit and model tests:
 
 ```bash
 npm test
 ```
-
-The test suite covers the deterministic model, benchmark definitions/runners, edge cases, comparison mode, PDF generation, hardware redaction, and the system designer catalog.
 
 Run visual regression tests:
 
@@ -79,7 +394,24 @@ Run visual regression tests:
 npm run test:visual
 ```
 
-The visual suite uses Playwright snapshots for the notes page, the app designer flow, and comparison mode on desktop and mobile Chromium. The GitHub workflow for visual regression runs on macOS so the committed baselines stay stable.
+Run CI-style visual smoke checks locally:
+
+```bash
+FIREFLY_VISUAL_MODE=smoke npm run test:visual
+```
+
+The test suite covers:
+
+- deterministic model behavior
+- edge-case handling
+- theoretical maximum calculations
+- benchmark definitions and runners
+- comparison mode
+- PDF report generation
+- hardware probe redaction
+- system designer catalog
+- source/provenance handling
+- visual layout regressions
 
 ## Build Web Assets
 
@@ -87,7 +419,7 @@ The visual suite uses Playwright snapshots for the notes page, the app designer 
 npm run build:web
 ```
 
-This creates `dist/`, which is used by the Tauri bundle. The directory is generated and intentionally ignored by git.
+This creates `dist/`, which is used by the Tauri app. The directory is generated and intentionally ignored by git.
 
 ## Desktop App
 
@@ -103,7 +435,7 @@ Build the desktop app for the current platform:
 npm run desktop:build
 ```
 
-On macOS, the bundle is written under:
+On macOS, bundles are written under:
 
 ```text
 src-tauri/target/release/bundle/
@@ -118,144 +450,32 @@ npm ci
 npm run desktop:build:windows
 ```
 
-Expected outputs are written under:
+Expected outputs:
 
 ```text
 src-tauri\target\release\bundle\
+src-tauri\target\release\firefly.exe
 ```
 
-Depending on the Tauri bundlers available on the machine, this may include an NSIS `.exe`, MSI `.msi`, and/or the raw `firefly.exe`.
+Depending on the available Tauri bundlers, the output may include an NSIS installer, MSI installer, and/or raw executable.
 
 ### GitHub Actions Windows Build
 
-This repository includes a production workflow:
+The repository includes a Windows packaging workflow:
 
 ```text
 .github/workflows/desktop-build.yml
 ```
 
-It runs on `windows-latest`, installs Node and Rust, runs tests, builds the Tauri Windows package, and uploads the Windows artifacts.
+It runs on `windows-latest`, installs Node and Rust, runs unit tests, builds the Tauri Windows package, and uploads the `firefly-windows` artifact.
 
-The repository also includes:
+The repository also includes a visual workflow:
 
 ```text
 .github/workflows/visual-regression.yml
 ```
 
-It runs Playwright screenshot regression tests and uploads the visual report on failure.
-
-After pushing to GitHub, open the repository's **Actions** tab and run **Desktop builds** manually, or push to `main` to trigger it automatically.
-
-Cross-compiling Windows from macOS is not the recommended path. It needs extra Windows resource tooling such as `llvm-rc`; the workflow avoids that by using a Windows runner.
-
-## Hardware Probe
-
-Run a local probe:
-
-```bash
-npm run probe
-```
-
-Probe adapters are intentionally best-effort:
-
-- macOS: `system_profiler`, `sysctl`, and `uptime`
-- Linux: `/proc`, `lsblk`, `lspci`, `ip`, and load/memory files
-- Windows: PowerShell CIM/WMI
-
-Firefly redacts stable identifiers such as serials, UUIDs, MAC addresses, IP addresses, and network signatures before displaying raw probe summaries.
-
-## Benchmark Engine
-
-Implemented benchmark plans:
-
-- Pure RAM micro-benchmark
-- Burst I/O write benchmark
-- Read I/O benchmark
-- Sustained write probe
-- Tiny-file sustained queue test
-- Guided DMI/PCH bottleneck test
-
-Benchmarks are bounded and use temporary files where needed. Results can be applied to the scenario model to replace assumptions with measured service rates.
-
-## System Designer
-
-The system designer includes named, real-world component classes:
-
-- Apple Silicon, Intel Core/Core Ultra/Xeon, AMD Ryzen/Threadripper/EPYC
-- NVIDIA, AMD, Intel, and Apple GPU stages, including newer high-end desktop parts as modeling entries
-- DDR4, DDR5, LPDDR5X, workstation, and server memory configurations
-- SATA, PCIe 3.0, PCIe 4.0, PCIe 5.0, and external USB SSDs
-- 1 GbE, 2.5 GbE, 10 GbE, 25 GbE, 40 GbE, 100 GbE, 200 GbE, 400 GbE, USB Ethernet, Wi-Fi 6E, and Wi-Fi 7 scenarios
-- CPU-direct, Intel DMI, AMD chipset, PCIe switch, Thunderbolt dock, and USB hub topologies
-
-The catalog carries source/provenance labels for official specs and calibrated model constants. The numbers are modeling constants, not universal benchmark guarantees. Real machines vary by firmware, cooling, filesystem, power state, driver, cable, queue depth, and workload.
-
-## Comparison Mode
-
-Use comparison mode to answer questions like:
-
-- Did the new driver actually help?
-- Did the cable swap fix the bottleneck?
-- Did the BIOS change improve the modeled path or just change observed noise?
-- Did the primary bottleneck move somewhere else?
-
-Capture a before scenario, adjust the model or benchmark results, capture after, and Firefly reports expected-time change, observed-time change, rate change, and bottleneck movement.
-
-Comparison mode also produces interpretation cards:
-
-- whether the bottleneck stayed put or moved
-- whether the modeled path improved while the observed run did not
-- whether observed gains are likely noise reduction rather than a true ceiling change
-- whether negotiated links, cables, topology, or firmware settings likely regressed
-- which stage to inspect next
-
-Captured before/after states can be loaded back into the scenario form for inspection or further tuning.
-
-## PDF Reports
-
-Firefly can export an aesthetic local PDF report for a scenario. Reports include the expected time, observed time, delta, primary constraints, warnings, confidence notes, and relevant model inputs. The report is generated client-side and does not require a network service.
-
-## Model Notes
-
-Firefly calculates transfer volume from logical file size and compression ratio, then builds a stage stack:
-
-- source storage read
-- destination write
-- port and protocol
-- PCIe or internal bus
-- memory copy
-- CPU transform
-- optional GPU transform
-- optional shared DMI/PCH bridge
-
-The expected throughput is the slowest effective stage adjusted by queue depth, concurrency, packet loss, OS overhead, architecture penalty, and thermal throttling. The app reports an uncertainty band because real systems include noise from caches, interrupt coalescing, antivirus scans, filesystem metadata, power states, scheduler placement, and measurement granularity.
-
-## Native Helpers
-
-The Tauri app includes a Rust command surface for native helper status, a signed-helper manifest, and a safe user-space counter snapshot. The current helper can report process elevation state, best-effort load, and best-effort memory pressure without silently installing privileged services.
-
-Planned helper directions:
-
-- macOS: signed helper for `powermetrics`, `ioreg`, storage/controller telemetry
-- Windows: service-backed ETW and Performance Counter collector with WMI fallback
-- Linux: polkit-gated helper for `perf`, `nvme-cli`, `lspci -vv`, and `/sys` topology counters
-
-These helpers should not be silently installed. They require explicit user consent and platform-specific signing/review.
-
-## Roadmap
-
-Firefly is ready as a local-first engineering preview, but the following work is required before treating it as a public consumer-grade diagnostic product:
-
-- Add confidence scoring that explains how much of a conclusion came from measured data, probed hardware facts, or user-supplied assumptions.
-- Add fix suggestions tied to each bottleneck, such as cable checks, lane-state checks, cooling checks, filesystem checks, and topology moves.
-- Add saved projects and historical baselines so users can track whether a system changes over days or weeks.
-- Add repeat-run statistics with medians, variance, and outlier detection to separate hardware changes from OS noise.
-- Add versioned update channels for the hardware constants catalog.
-- Turn the signed-helper manifest into installable, signed helpers with explicit consent and uninstall paths.
-- Add release signing/notarization for macOS and Windows before distributing installers broadly.
-- Expand visual regression coverage to PDF output and the packaged desktop shell.
-- Add import/export for comparison snapshots so users can share reproducible diagnostic cases.
-- Add onboarding presets for non-expert users: "file copy is slow", "external drive is slow", "network transfer is slow", and "upgrade check".
+It installs Playwright Chromium, runs CI visual checks, and uploads visual reports on failure.
 
 ## Repository Layout
 
@@ -264,31 +484,90 @@ Firefly is ready as a local-first engineering preview, but the following work is
 ├── app.html
 ├── index.html
 ├── server.js
+├── assets/
+│   └── firefly-logo.png
+├── scripts/
+│   ├── build-web-assets.js
+│   └── make-windows-icon.js
 ├── src/
 │   ├── app.js
 │   ├── benchmarkEngine.js
+│   ├── capabilities.js
 │   ├── comparison.js
 │   ├── hardwareProbe.js
+│   ├── historyStore.js
 │   ├── model.js
 │   ├── pdfReport.js
+│   ├── productClarity.js
 │   ├── styles.css
-│   └── systemDesigner.js
+│   ├── systemDesigner.js
+│   └── theoreticalMax.js
 ├── src-tauri/
-│   ├── src/
 │   ├── icons/
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── main.rs
+│   │   └── native_helpers.rs
 │   └── tauri.conf.json
-├── scripts/
 ├── tests/
+│   ├── visual/
+│   └── *.test.js
 └── .github/workflows/
 ```
 
-## Safety And Privacy
+## Design Direction
 
-- Probe output is local.
-- Raw hardware summaries are redacted before display.
-- Benchmark files are temporary and bounded.
-- No privileged helper is installed by default.
-- No cloud service is required for the model.
+Firefly uses a brutalist-editorial interface language:
+
+- warm paper backgrounds
+- black ink hierarchy
+- restrained orange/red accents
+- fixed vertical navigation
+- large display typography
+- thin structural borders
+- dark inverse bands
+- grain texture
+- lateral hover motion
+- responsive single-column layouts on mobile
+
+The design goal is to make dense systems reasoning feel readable, tactile, and calm instead of dashboard-noisy.
+
+## Known Limits
+
+Firefly is powerful, but it should be read as a reasoning engine rather than an omniscient hardware oracle.
+
+Current limits:
+
+- exact motherboard lane routing may require board-specific metadata
+- vendor SSD cache behavior can vary by firmware and fill state
+- thermal behavior depends on cooling, ambient temperature, chassis, and fan curves
+- OS scheduling can move work between heterogeneous cores
+- filesystem cache can make observed runs appear faster than the physical path
+- antivirus, indexing, and background services can affect results
+- deep bus counters require signed privileged helpers
+- public installer distribution requires code signing and notarization
+
+The model is deliberately transparent so users can see which inputs were measured, probed, sourced, derived, or assumed.
+
+## Future Updates
+
+Planned future work:
+
+- installable signed native helpers for macOS, Windows, and Linux
+- macOS notarization and Windows code signing for public installer distribution
+- ETW and Performance Counter collection on Windows
+- `powermetrics`, IOKit, and storage/controller telemetry on macOS
+- `perf`, `nvme-cli`, `lspci -vv`, and `/sys` topology counters on Linux
+- versioned update channel for the hardware constants database
+- saved projects and historical machine baselines
+- import/export for comparison snapshots
+- repeat-run statistics with medians, variance, and outlier detection
+- confidence scoring that separates measured, probed, sourced, derived, and assumed inputs
+- fix suggestions tied to each bottleneck
+- beginner presets such as "external drive is slow", "network copy is slow", and "upgrade check"
+- richer PDF reports with charts and comparison history
+- visual regression coverage for PDF output and packaged desktop shells
+- GitHub Release automation for signed desktop artifacts
 
 ## License
 
