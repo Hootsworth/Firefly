@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "Deterministic system-path diagnostics for expected vs observed performance."
 authors = ["Firefly"]
 edition = "2021"
-license = "MIT"
+license = "Apache-2.0"
 
 [lib]
 name = "firefly_lib"

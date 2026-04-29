@@ -23,7 +23,7 @@
     "diagnostics"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@tauri-apps/cli": "^2.0.0"
