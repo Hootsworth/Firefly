@@ -6,6 +6,8 @@
   "scripts": {
     "build:icons": "node scripts/make-windows-icon.js",
     "build:web": "node scripts/build-web-assets.js",
+    "catalog:update": "node scripts/update-hardware-catalog.js",
+    "catalog:update:offline": "node scripts/update-hardware-catalog.js --offline",
     "test": "node --test",
     "test:unit": "node --test",
     "test:visual": "playwright test",

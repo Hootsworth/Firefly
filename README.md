@@ -173,16 +173,45 @@ The database includes:
 - USB and Thunderbolt-style external path ceilings
 - DMI/chipset bridge ceilings
 - named CPU, GPU, storage, memory, network, and topology presets
+- generated PCI device ID matches for GPUs, NVMe controllers, NICs, and chipset devices
+- generated USB device ID matches for external SSD bridges, USB NICs, docks, and adapters
+- Wikidata metadata links for selected public component entities
 - source/provenance metadata exposed in the UI
 
 The catalog distinguishes between:
 
 - official specification constants
 - vendor-published product figures
+- PCI/USB device identification snapshots
+- broad structured metadata
 - calibrated modeling assumptions
 - conservative local heuristics
 
 These values are modeling constants, not universal benchmark promises. Real performance depends on firmware, drivers, thermals, power state, filesystem, queue depth, cable quality, topology, and workload shape.
+
+Firefly includes a catalog updater:
+
+```bash
+npm run catalog:update
+```
+
+The updater pulls the PCI ID Repository, USB ID Repository, and Wikidata SPARQL metadata, filters them into a compact Firefly catalog, and writes:
+
+```text
+src/hardwareCatalog.generated.js
+```
+
+For deterministic local development without network access:
+
+```bash
+npm run catalog:update:offline
+```
+
+The generated catalog is also available from the local server:
+
+```text
+GET /api/catalog
+```
 
 Representative sources embedded in the catalog include:
 
@@ -193,6 +222,9 @@ Representative sources embedded in the catalog include:
 - Samsung NVMe SSD specifications: https://www.samsung.com/us/memory-storage/nvme-ssd/990-pro-2tb-nvme-pcie-gen-4-mz-v9p2t0b-am/
 - USB4 specification overview: https://www.usb.org/usb4
 - IEEE 802.3 Ethernet standard: https://standards.ieee.org/standard/802_3-2022.html
+- PCI ID Repository: https://pci-ids.ucw.cz/
+- USB ID Repository: https://www.linux-usb.org/usb-ids.html
+- Wikidata SPARQL: https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service
 
 ### Benchmark Engine
 
@@ -409,6 +441,8 @@ The test suite covers:
 - comparison mode
 - PDF report generation
 - hardware probe redaction
+- catalog adapter parsing
+- generated PCI/USB device resolution
 - system designer catalog
 - source/provenance handling
 - visual layout regressions
@@ -559,6 +593,7 @@ Planned future work:
 - `powermetrics`, IOKit, and storage/controller telemetry on macOS
 - `perf`, `nvme-cli`, `lspci -vv`, and `/sys` topology counters on Linux
 - versioned update channel for the hardware constants database
+- richer live catalog adapters for vendor spec sheets and release feeds
 - saved projects and historical machine baselines
 - import/export for comparison snapshots
 - repeat-run statistics with medians, variance, and outlier detection

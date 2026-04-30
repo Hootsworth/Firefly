@@ -1,5 +1,7 @@
 import { analyzeScenario, formatRate, formatSeconds } from "./model.js";
 import { pcieMBps } from "./theoreticalMax.js";
+import { summarizeGeneratedCatalog } from "./catalogAdapters.js";
+import { GENERATED_HARDWARE_CATALOG } from "./hardwareCatalog.generated.js";
 
 export const HARDWARE_SOURCES = {
   "pcisig-pcie6-faq": {
@@ -36,6 +38,21 @@ export const HARDWARE_SOURCES = {
     label: "Firefly modeled constant",
     url: "README.md",
     note: "Conservative modeling ceiling derived from public specs and adjusted for real-world overhead; replace with probe or benchmark data when available."
+  },
+  "pci-ids": {
+    label: "PCI ID Repository",
+    url: "https://pci-ids.ucw.cz/",
+    note: "Daily PCI vendor/device ID snapshots used to identify GPUs, NVMe controllers, NICs, bridges, and chipset devices."
+  },
+  "usb-ids": {
+    label: "USB ID Repository",
+    url: "https://www.linux-usb.org/usb-ids.html",
+    note: "USB vendor/device ID snapshots used to identify external SSD bridges, USB NICs, docks, and adapters."
+  },
+  "wikidata-sparql": {
+    label: "Wikidata SPARQL",
+    url: "https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service",
+    note: "Structured metadata endpoint used for broad component names, manufacturers, and cross-reference URLs."
   }
 };
 
@@ -149,12 +166,36 @@ export function componentSources(component) {
 export function catalogSummary() {
   const groups = Object.fromEntries(Object.entries(COMPONENTS).map(([group, items]) => [group, items.length]));
   const sourcedItems = Object.values(COMPONENTS).flat().filter((item) => item.sourceIds?.some((id) => id !== "model-calibrated"));
+  const generated = summarizeGeneratedCatalog(GENERATED_HARDWARE_CATALOG);
   return {
     groups,
     totalItems: Object.values(groups).reduce((sum, count) => sum + count, 0),
     sourceCount: Object.keys(HARDWARE_SOURCES).length,
-    sourcedItemCount: sourcedItems.length
+    sourcedItemCount: sourcedItems.length,
+    generated
   };
+}
+
+export function resolvePciDevice(vendorId, deviceId) {
+  return findGeneratedDevice(GENERATED_HARDWARE_CATALOG.pciDevices, vendorId, deviceId);
+}
+
+export function resolveUsbDevice(vendorId, deviceId) {
+  return findGeneratedDevice(GENERATED_HARDWARE_CATALOG.usbDevices, vendorId, deviceId);
+}
+
+export function componentCatalogMatches(component) {
+  const haystack = `${component?.label || ""} ${component?.family || ""} ${component?.interface || ""} ${component?.standard || ""}`.toLowerCase();
+  const devices = [...(GENERATED_HARDWARE_CATALOG.pciDevices || []), ...(GENERATED_HARDWARE_CATALOG.usbDevices || [])];
+  const deviceMatches = devices.filter((device) => {
+    const terms = searchableTerms(device);
+    return terms.some((term) => term.length >= 4 && haystack.includes(term));
+  }).slice(0, 4);
+  const wikidataMatches = (GENERATED_HARDWARE_CATALOG.wikidataComponents || []).filter((item) => {
+    const label = item.label?.toLowerCase();
+    return label && haystack.includes(label);
+  }).slice(0, 2);
+  return [...deviceMatches, ...wikidataMatches];
 }
 
 export function scoreBuild(selection = DEFAULT_BUILD) {
@@ -215,6 +256,9 @@ export function scoreBuild(selection = DEFAULT_BUILD) {
     provenance: Object.fromEntries(
       Object.entries(parts).map(([group, part]) => [group, componentSources(part).map((source) => source.label)])
     ),
+    catalogMatches: Object.fromEntries(
+      Object.entries(parts).map(([group, part]) => [group, componentCatalogMatches(part)])
+    ),
     specs: {
       cpu: [
         parts.cpu.family,
@@ -250,4 +294,21 @@ export function scoreBuild(selection = DEFAULT_BUILD) {
       ]
     }
   };
+}
+
+function findGeneratedDevice(devices = [], vendorId, deviceId) {
+  const normalizedVendor = normalizeId(vendorId);
+  const normalizedDevice = normalizeId(deviceId);
+  return devices.find((device) => device.vendorId === normalizedVendor && device.deviceId === normalizedDevice) || null;
+}
+
+function normalizeId(value) {
+  return String(value || "").toLowerCase().replace(/^0x/, "").padStart(4, "0");
+}
+
+function searchableTerms(device) {
+  return `${device.vendor || ""} ${device.name || ""} ${device.label || ""}`
+    .toLowerCase()
+    .split(/[^a-z0-9+.-]+/)
+    .filter((term) => !["corporation", "electronics", "technologies", "controller", "device"].includes(term));
 }

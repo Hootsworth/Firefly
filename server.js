@@ -5,6 +5,8 @@ import { probeHardware } from "./src/hardwareProbe.js";
 import { listBenchmarks, runBenchmark } from "./src/benchmarkEngine.js";
 import { appendHistory, readHistory } from "./src/historyStore.js";
 import { createReportPdf } from "./src/pdfReport.js";
+import { summarizeGeneratedCatalog } from "./src/catalogAdapters.js";
+import { GENERATED_HARDWARE_CATALOG } from "./src/hardwareCatalog.generated.js";
 
 const root = process.cwd();
 const port = Number(process.env.PORT || 4173);
@@ -28,6 +30,17 @@ const server = createServer(async (req, res) => {
 
     if (url.pathname === "/api/benchmarks") {
       await sendJson(res, { benchmarks: listBenchmarks() });
+      return;
+    }
+
+    if (url.pathname === "/api/catalog") {
+      await sendJson(res, {
+        summary: summarizeGeneratedCatalog(GENERATED_HARDWARE_CATALOG),
+        sources: GENERATED_HARDWARE_CATALOG.sources,
+        pciDevices: GENERATED_HARDWARE_CATALOG.pciDevices,
+        usbDevices: GENERATED_HARDWARE_CATALOG.usbDevices,
+        wikidataComponents: GENERATED_HARDWARE_CATALOG.wikidataComponents
+      });
       return;
     }
 

@@ -1,6 +1,6 @@
 import { PRESETS, analyzeScenario, formatRate, formatSeconds } from "./model.js";
 import { BENCHMARK_PLANS } from "./capabilities.js";
-import { COMPONENTS, DEFAULT_BUILD, scoreBuild } from "./systemDesigner.js";
+import { COMPONENTS, DEFAULT_BUILD, catalogSummary, scoreBuild } from "./systemDesigner.js";
 import { compareScenarios } from "./comparison.js";
 
 const form = document.querySelector("#scenario-form");
@@ -318,6 +318,7 @@ function renderDesigner() {
   output.designerMap.replaceChildren(
     ...nodes.map(([label, group, value, specs], index) => {
       const provenance = build.provenance[group] || [];
+      const matches = build.catalogMatches[group] || [];
       const node = document.createElement("article");
       node.className = `design-node n${index}`;
       node.innerHTML = `
@@ -325,6 +326,7 @@ function renderDesigner() {
         <strong>${value}</strong>
         <ul class="component-specs">${specs.map((spec) => `<li>${spec}</li>`).join("")}</ul>
         <small class="source-note">${provenance.join(" / ")}</small>
+        ${matches.length ? `<small class="source-note catalog-match">Catalog: ${matches.map(formatCatalogMatch).join(" / ")}</small>` : ""}
       `;
       return node;
     })
@@ -343,6 +345,11 @@ function renderDesigner() {
     }),
     summaryCard(build)
   );
+}
+
+function formatCatalogMatch(match) {
+  if (match.vendorId && match.deviceId) return `${match.vendor} ${match.name} (${match.vendorId}:${match.deviceId})`;
+  return `${match.label}${match.manufacturer ? `, ${match.manufacturer}` : ""}`;
 }
 
 function snapshotScenario(label) {
@@ -479,12 +486,14 @@ function signedPercent(value) {
 }
 
 function summaryCard(build) {
+  const catalog = catalogSummary();
   const item = document.createElement("article");
   item.className = "score-card summary";
   item.innerHTML = `
     <span>Expected path</span>
     <strong>${build.summary[0]}</strong>
     <p>${build.summary.slice(1).join(" / ")}</p>
+    <small class="source-note">Catalog ${catalog.generated.mode}: ${catalog.generated.deviceIdCount} device IDs / ${catalog.generated.wikidataCount} metadata links</small>
   `;
   return item;
 }

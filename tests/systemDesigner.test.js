@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { COMPONENTS, DEFAULT_BUILD, HARDWARE_SOURCES, catalogSummary, scoreBuild } from "../src/systemDesigner.js";
+import {
+  COMPONENTS,
+  DEFAULT_BUILD,
+  HARDWARE_SOURCES,
+  catalogSummary,
+  componentCatalogMatches,
+  resolvePciDevice,
+  resolveUsbDevice,
+  scoreBuild
+} from "../src/systemDesigner.js";
 
 test("scores a default system design", () => {
   const build = scoreBuild(DEFAULT_BUILD);
@@ -41,6 +50,8 @@ test("catalog exposes a larger sourced constants database", () => {
   assert.ok(summary.totalItems >= 60);
   assert.ok(summary.sourceCount >= 6);
   assert.ok(summary.sourcedItemCount >= 8);
+  assert.ok(summary.generated.deviceIdCount >= 12);
+  assert.ok(summary.generated.sourceCount >= 3);
   assert.ok(COMPONENTS.cpu.some((part) => part.id === "amd-ryzen-9-9950x"));
   assert.ok(COMPONENTS.storage.some((part) => part.id === "samsung-9100-pro-4tb"));
   assert.ok(HARDWARE_SOURCES["samsung-990-pro"].url.startsWith("https://"));
@@ -57,4 +68,24 @@ test("designer returns provenance labels for selected parts", () => {
   assert.ok(build.provenance.cpu.some((label) => label.includes("14900K")));
   assert.ok(build.provenance.storage.some((label) => label.includes("990 PRO")));
   assert.ok(build.provenance.topology.some((label) => label.includes("14900K")));
+});
+
+test("generated catalog resolves PCI and USB device IDs", () => {
+  const gpu = resolvePciDevice("10de", "2684");
+  const usbNic = resolveUsbDevice("0x0bda", "0x8156");
+
+  assert.match(gpu.name, /RTX 4090/);
+  assert.match(usbNic.name, /2.5GbE/);
+});
+
+test("designer parts expose generated catalog matches", () => {
+  const build = scoreBuild({
+    ...DEFAULT_BUILD,
+    gpu: "rtx-4090",
+    storage: "samsung-990-pro-2tb"
+  });
+
+  assert.ok(build.catalogMatches.gpu.some((match) => match.name?.includes("RTX 4090") || match.label?.includes("RTX 4090")));
+  assert.ok(build.catalogMatches.storage.some((match) => match.name?.includes("990 PRO") || match.label?.includes("990")));
+  assert.ok(componentCatalogMatches(build.parts.gpu).length > 0);
 });
